@@ -31,8 +31,10 @@ export function AuthForm() {
         });
       } else {
         const name = formData.get('name') as string;
+        const celular = formData.get('celular') as string;
         await signUp(email, password, { 
           name,
+          celular,
           type: 'VISITOR',
           ufmg_status: 'NONE',
           housing_status: 'NONE'
@@ -77,6 +79,16 @@ export function AuthForm() {
               <div className="space-y-2">
                 <Label htmlFor="name">Nome</Label>
                 <Input id="name" name="name" type="text" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="celular">Celular</Label>
+                <Input 
+                  id="celular" 
+                  name="celular" 
+                  type="tel"
+                  placeholder="(XX) XXXXX-XXXX"
+                  required 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>

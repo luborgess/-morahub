@@ -20,31 +20,53 @@ export class AuthService {
   }
 
   static async signUp(email: string, password: string, userData: Partial<Profile>) {
-    const { data: authData, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name: userData.name,
-          image_url: userData.image_url,
+    try {
+      console.log('Iniciando registro do usuário:', { email, userData });
+
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: userData.name,
+            image_url: userData.image_url,
+          }
         }
-      }
-    });
-
-    if (signUpError) throw signUpError;
-    if (!authData.user) throw new Error('No user data returned');
-
-    const { error: profileError } = await supabase
-      .from('users')
-      .insert({
-        ...userData,
-        id: authData.user.id,
-        email: authData.user.email,
       });
 
-    if (profileError) throw profileError;
+      console.log('Resposta do auth.signUp:', { authData, signUpError });
 
-    return this.signIn(email, password);
+      if (signUpError) throw signUpError;
+      if (!authData.user) throw new Error('No user data returned');
+
+      console.log('Inserindo usuário na tabela users:', {
+        id: authData.user.id,
+        email: authData.user.email,
+        userData
+      });
+
+      const { error: profileError, data: profileData } = await supabase
+        .from('users')
+        .insert({
+          ...userData,
+          id: authData.user.id,
+          email: authData.user.email,
+        })
+        .select()
+        .single();
+
+      console.log('Resposta da inserção na tabela users:', { profileData, profileError });
+
+      if (profileError) {
+        console.error('Erro ao criar perfil:', profileError);
+        throw profileError;
+      }
+
+      return this.signIn(email, password);
+    } catch (error) {
+      console.error('Erro durante o registro:', error);
+      throw error;
+    }
   }
 
   static async signOut() {
