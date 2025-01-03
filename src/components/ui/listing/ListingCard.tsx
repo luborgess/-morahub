@@ -78,8 +78,13 @@ export function ListingCard({ listing, onEdit, onDelete, showActions = false, on
     }).format(price);
   };
 
+  console.log('ListingCard data:', listing);
+
   return (
-    <Card className="h-full flex flex-col hover:border-primary cursor-pointer" onClick={onClick}>
+    <Card 
+      className="h-full flex flex-col hover:border-primary cursor-pointer" 
+      onClick={() => onClick ? onClick() : window.location.href = `/listings/${listing.id}`}
+    >
       <CardHeader className="relative">
         <div className="aspect-video w-full overflow-hidden rounded-lg">
           {listing.images && listing.images.length > 0 ? (
@@ -97,65 +102,76 @@ export function ListingCard({ listing, onEdit, onDelete, showActions = false, on
         <Badge className={`absolute top-2 right-2 ${TYPE_COLORS[listing.type]}`}>
           {TYPE_LABELS[listing.type]}
         </Badge>
-        {user && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-2 left-2"
-            onClick={handleFavorite}
-          >
-            {isFavorite ? (
-              <Icons.heart className="h-5 w-5 fill-destructive text-destructive" />
-            ) : (
-              <Icons.heart className="h-5 w-5" />
-            )}
-          </Button>
-        )}
       </CardHeader>
-      <CardContent className="flex-grow">
-        <div className="space-y-1.5">
-          <Link 
-            to={`/listings/${listing.id}`}
-            className="text-lg font-semibold leading-none hover:underline"
-          >
-            {listing.title}
-          </Link>
-          {listing.price > 0 && (
-            <p className="text-xl font-bold text-primary">
-              {formatPrice(listing.price)}
-            </p>
-          )}
-          <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-            <Icons.eye className="h-4 w-4" />
-            <span>{listing.visualizacoes || 0} visualizações</span>
+
+      <CardContent className="flex-1">
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-semibold">{listing.title}</h3>
+            {listing.price > 0 && (
+              <p className="text-lg font-bold text-primary">
+                {formatPrice(listing.price)}
+              </p>
+            )}
           </div>
-          {listing.condition && (
-            <Badge variant="outline">
-              {CONDITION_LABELS[listing.condition]}
-            </Badge>
+
+          {listing.users && (
+            <div className="flex items-center space-x-2">
+              {listing.users.image_url ? (
+                <img
+                  src={listing.users.image_url}
+                  alt={listing.users.name}
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
+                  <Icons.user className="h-4 w-4" />
+                </div>
+              )}
+              <div>
+                <p className="text-sm font-medium">
+                  {listing.users.commercial_name || listing.users.name}
+                </p>
+                {listing.users.whatsapp_msg && (
+                  <p className="text-xs text-muted-foreground">
+                    {listing.users.whatsapp_msg}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {listing.users?.celular && (
+            <Button
+              size="sm"
+              className="w-full"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                const msg = encodeURIComponent(
+                  `Olá! Vi seu anúncio "${listing.title}" no MoraHub e gostaria de mais informações.`
+                );
+                window.open(
+                  `https://wa.me/55${listing.users.celular}?text=${msg}`,
+                  '_blank'
+                );
+              }}
+            >
+              <Icons.whatsapp className="mr-2 h-4 w-4" />
+              Contatar via WhatsApp
+            </Button>
           )}
         </div>
       </CardContent>
+
       {showActions && (
-        <CardFooter className="pt-6">
-          <div className="flex space-x-2 w-full">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={handleEdit}
-            >
-              <Icons.edit className="mr-2 h-4 w-4" />
-              Editar
-            </Button>
-            <Button
-              variant="destructive"
-              className="flex-1"
-              onClick={handleDelete}
-            >
-              <Icons.trash className="mr-2 h-4 w-4" />
-              Excluir
-            </Button>
-          </div>
+        <CardFooter className="flex justify-end space-x-2">
+          <Button size="sm" variant="outline" onClick={handleEdit}>
+            <Icons.edit className="h-4 w-4" />
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleDelete}>
+            <Icons.trash className="h-4 w-4" />
+          </Button>
         </CardFooter>
       )}
     </Card>

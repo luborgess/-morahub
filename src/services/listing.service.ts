@@ -105,11 +105,13 @@ export class ListingService {
   // Obter anúncio por ID
   static async getListingById(id: string) {
     try {
+      console.log('Fetching listing details for id:', id);
+      
       const { data: listing, error } = await supabase
         .from('listings')
         .select(`
           *,
-          users (
+          users!inner (
             id,
             name,
             commercial_name,
@@ -117,17 +119,20 @@ export class ListingService {
             whatsapp_msg,
             celular
           ),
-          subcategories (
+          subcategories!inner (
             id,
             name,
             categories (
               id,
-              name
+              name,
+              type
             )
           )
         `)
         .eq('id', id)
         .single();
+
+      console.log('Listing details result:', { listing, error });
 
       if (error) throw error;
       if (!listing) throw new Error('Anúncio não encontrado');
@@ -159,13 +164,15 @@ export class ListingService {
         .from('listings')
         .select(`
           *,
-          users (
+          users:public_user_profiles!listings_user_id_fkey (
             id,
             name,
             commercial_name,
-            image_url
+            image_url,
+            whatsapp_msg,
+            celular
           ),
-          subcategories (
+          subcategories!inner (
             id,
             name,
             categories (
@@ -174,7 +181,9 @@ export class ListingService {
               type
             )
           )
-        `, { count: 'exact' });
+        `, { count: 'exact' })
+        .eq('status', 'ACTIVE')
+        .order('created_at', { ascending: false });
 
       // Aplicar filtros
       if (filters.housing_id) {
@@ -201,20 +210,16 @@ export class ListingService {
       if (filters.search_query) {
         query = query.ilike('title', `%${filters.search_query}%`);
       }
-      if (filters.status) {
-        query = query.eq('status', filters.status);
-      } else {
-        query = query.eq('status', 'ACTIVE');
-      }
 
       // Paginação
       const from = (page - 1) * limit;
       const to = from + limit - 1;
-      query = query
-        .order('created_at', { ascending: false })
-        .range(from, to);
+      query = query.range(from, to);
 
       const { data, error, count } = await query;
+      
+      console.log('Listings query result:', { data, error, count });
+      
       return { data, error, count };
     } catch (error) {
       return { data: null, error, count: 0 };
