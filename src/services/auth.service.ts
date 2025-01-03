@@ -23,6 +23,12 @@ export class AuthService {
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          name: userData.name,
+          image_url: userData.image_url,
+        }
+      }
     });
 
     if (signUpError) throw signUpError;
@@ -56,16 +62,19 @@ export class AuthService {
     const session = await this.getCurrentSession();
     if (!session) return null;
 
+    console.log('session.user:', session.user);
     const { data: profile } = await supabase
       .from('users')
       .select('*')
       .eq('id', session.user.id)
       .single();
 
+    console.log('profile:', profile);
     return profile;
   }
 
   static async updateProfile(userId: string, updates: Partial<Profile>) {
+    // Atualizar perfil
     const { data, error } = await supabase
       .from('users')
       .update(updates)

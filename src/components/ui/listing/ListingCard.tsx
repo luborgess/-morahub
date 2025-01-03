@@ -4,6 +4,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Icons } from '@/components/ui/icons';
 import type { Listing } from '@/services/listing.service';
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useFavorite } from '@/hooks/useFavorite';
 
 const TYPE_COLORS = {
   SALE: 'bg-green-100 text-green-800',
@@ -31,9 +34,42 @@ interface ListingCardProps {
   onEdit?: () => void;
   onDelete?: () => void;
   showActions?: boolean;
+  onClick?: () => void;
 }
 
-export function ListingCard({ listing, onEdit, onDelete, showActions = false }: ListingCardProps) {
+export function ListingCard({ listing, onEdit, onDelete, showActions = false, onClick }: ListingCardProps) {
+  const { user } = useAuth();
+  const { checkIsFavorite, addFavorite, removeFavorite } = useFavorite();
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      checkIsFavorite(listing.id).then(setIsFavorite);
+    }
+  }, [user, listing.id, checkIsFavorite]);
+
+  const handleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Previne navegação ao clicar no botão
+    if (!user) return;
+
+    if (isFavorite) {
+      await removeFavorite(listing.id);
+    } else {
+      await addFavorite(listing.id);
+    }
+    setIsFavorite(!isFavorite);
+  };
+
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEdit?.();
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete?.();
+  };
+
   const formatPrice = (price?: number) => {
     if (!price) return '';
     return new Intl.NumberFormat('pt-BR', {
@@ -43,18 +79,38 @@ export function ListingCard({ listing, onEdit, onDelete, showActions = false }: 
   };
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-full flex flex-col hover:border-primary cursor-pointer" onClick={onClick}>
       <CardHeader className="relative">
-        <div className="aspect-square w-full overflow-hidden rounded-lg">
-          <img
-            src={listing.images?.[0] || 'https://via.placeholder.com/400x400?text=Sem+Imagem'}
-            alt={listing.title}
-            className="h-full w-full object-cover transition-all hover:scale-105"
-          />
+        <div className="aspect-video w-full overflow-hidden rounded-lg">
+          {listing.images && listing.images.length > 0 ? (
+            <img
+              src={listing.images[0]}
+              alt={listing.title}
+              className="h-full w-full object-cover transition-transform group-hover:scale-105"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-muted">
+              <Icons.image className="h-12 w-12 text-muted-foreground" />
+            </div>
+          )}
         </div>
         <Badge className={`absolute top-2 right-2 ${TYPE_COLORS[listing.type]}`}>
           {TYPE_LABELS[listing.type]}
         </Badge>
+        {user && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-2 left-2"
+            onClick={handleFavorite}
+          >
+            {isFavorite ? (
+              <Icons.heart className="h-5 w-5 fill-destructive text-destructive" />
+            ) : (
+              <Icons.heart className="h-5 w-5" />
+            )}
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="flex-grow">
         <div className="space-y-1.5">
@@ -86,7 +142,7 @@ export function ListingCard({ listing, onEdit, onDelete, showActions = false }: 
             <Button
               variant="outline"
               className="flex-1"
-              onClick={onEdit}
+              onClick={handleEdit}
             >
               <Icons.edit className="mr-2 h-4 w-4" />
               Editar
@@ -94,7 +150,7 @@ export function ListingCard({ listing, onEdit, onDelete, showActions = false }: 
             <Button
               variant="destructive"
               className="flex-1"
-              onClick={onDelete}
+              onClick={handleDelete}
             >
               <Icons.trash className="mr-2 h-4 w-4" />
               Excluir

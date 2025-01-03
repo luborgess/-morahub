@@ -110,32 +110,36 @@ export default function ListingDetailPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Galeria de Imagens */}
         <div className="space-y-4">
-          <div className="aspect-square overflow-hidden rounded-lg border">
-            <img
-              src={listing.images?.[currentImage] || 'https://via.placeholder.com/400x400?text=Sem+Imagem'}
-              alt={listing.title}
-              className="h-full w-full object-cover"
-            />
+          <div className="relative aspect-video w-full overflow-hidden rounded-lg">
+            {listing.images && listing.images.length > 0 ? (
+              <>
+                <img
+                  src={listing.images[currentImage]}
+                  alt={`${listing.title} - Imagem ${currentImage + 1}`}
+                  className="h-full w-full object-cover"
+                />
+                {listing.images.length > 1 && (
+                  <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 space-x-2">
+                    {listing.images.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentImage(index)}
+                        className={`h-2 w-2 rounded-full ${
+                          index === currentImage
+                            ? 'bg-primary'
+                            : 'bg-primary/50'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-muted">
+                <Icons.image className="h-12 w-12 text-muted-foreground" />
+              </div>
+            )}
           </div>
-          {listing.images && listing.images.length > 1 && (
-            <div className="grid grid-cols-4 gap-2">
-              {listing.images.map((image: string, index: number) => (
-                <button
-                  key={image}
-                  onClick={() => setCurrentImage(index)}
-                  className={`aspect-square overflow-hidden rounded-lg border ${
-                    currentImage === index ? 'ring-2 ring-primary' : ''
-                  }`}
-                >
-                  <img
-                    src={image}
-                    alt={`${listing.title} - Imagem ${index + 1}`}
-                    className="h-full w-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Informações do Anúncio */}

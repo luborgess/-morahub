@@ -1,6 +1,7 @@
 import {
   AlertTriangle,
   ArrowRight,
+  ArrowLeft,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -11,10 +12,12 @@ import {
   File,
   FileText,
   Github,
+  Heart,
   HelpCircle,
   Image,
   Laptop,
   Loader2,
+  LogOut,
   LucideProps,
   MessageCircle,
   Moon,
@@ -54,6 +57,7 @@ export const Icons = {
   warning: AlertTriangle,
   user: User,
   arrowRight: ArrowRight,
+  arrowLeft: ArrowLeft,
   help: HelpCircle,
   pizza: Pizza,
   sun: SunMedium,
@@ -72,6 +76,8 @@ export const Icons = {
   x: X,
   image: Image,
   messageCircle: MessageCircle,
+  heart: Heart,
+  logout: LogOut,
   empty: ({ ...props }: LucideProps) => (
     <svg
       xmlns="http://www.w3.org/2000/svg"

@@ -27,7 +27,9 @@ export const useListing = create<ListingState>((set, get) => ({
   currentPage: 1,
   loading: false,
   error: null,
-  filters: {},
+  filters: {
+    status: 'ACTIVE'
+  },
   categories: [],
   housing: [],
 

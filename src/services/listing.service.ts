@@ -39,8 +39,16 @@ export class ListingService {
   static async getCategories() {
     try {
       const { data, error } = await supabase
-        .from('categories')
-        .select('*, subcategories(*)');
+        .from('subcategories')
+        .select(`
+          id,
+          name,
+          categories (
+            id,
+            name
+          )
+        `)
+        .order('name');
 
       return { data, error };
     } catch (error) {
@@ -65,14 +73,27 @@ export class ListingService {
   // Criar anúncio
   static async createListing(data: Partial<Listing>) {
     try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) throw new Error('Usuário não autenticado');
+
+      // Garantir que as imagens sejam salvas no formato correto
+      const images = data.images?.map(img => {
+        if (typeof img === 'string') {
+          return { url: img };
+        }
+        return img;
+      });
+
       const { data: listing, error } = await supabase
         .from('listings')
         .insert({
           ...data,
+          images,
+          user_id: user.data.user.id,
           status: 'ACTIVE',
           visualizacoes: 0,
         })
-        .select()
+        .select('*')
         .single();
 
       return { data: listing, error };
@@ -203,12 +224,26 @@ export class ListingService {
   // Atualizar anúncio
   static async updateListing(id: string, data: Partial<Listing>) {
     try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) throw new Error('Usuário não autenticado');
+
       const { data: listing, error } = await supabase
         .from('listings')
-        .update(data)
+        .update({
+          ...data,
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', id)
-        .select()
+        .eq('user_id', user.data.user.id) // Garante que apenas o dono pode editar
+        .select('*')
         .single();
+
+      if (!listing && !error) {
+        return { 
+          data: null, 
+          error: new Error('Anúncio não encontrado ou sem permissão para editar') 
+        };
+      }
 
       return { data: listing, error };
     } catch (error) {
@@ -216,19 +251,24 @@ export class ListingService {
     }
   }
 
-  // Deletar anúncio
+  // Excluir anúncio (soft delete)
   static async deleteListing(id: string) {
     try {
-      const { data: listing, error } = await supabase
-        .from('listings')
-        .update({ status: 'DELETED', deleted_at: new Date().toISOString() })
-        .eq('id', id)
-        .select()
-        .single();
+      const user = await supabase.auth.getUser();
+      if (!user.data.user) throw new Error('Usuário não autenticado');
 
-      return { data: listing, error };
+      const { data, error } = await supabase
+        .rpc('soft_delete_listing', {
+          listing_id: id
+        });
+
+      if (!data && !error) {
+        return { error: new Error('Anúncio não encontrado ou sem permissão') };
+      }
+
+      return { error };
     } catch (error) {
-      return { data: null, error };
+      return { error };
     }
   }
 }
